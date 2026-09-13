@@ -1,0 +1,34 @@
+name: 'ESO Addon Dependency Version Check'
+description: "Checks your manifest's DependsOn floor for one dependency against that dependency's actual live published version."
+author: 'MPHONlC'
+branding:
+  icon: 'link'
+  color: 'blue'
+
+inputs:
+  manifest_file:
+    description: 'Your own .addon manifest'
+    required: true
+  dependency_name:
+    description: 'Name of the dependency to check, matching your DependsOn line'
+    required: true
+  dependency_manifest_url:
+    description: 'Raw URL to the dependency''s own live .addon manifest'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Fetch dependency's live manifest
+      shell: bash
+      run: |
+        curl -sSfL "${{ inputs.dependency_manifest_url }}" -o /tmp/eso-dependency-check-dep.addon
+
+    - name: Check dependency version freshness
+      shell: bash
+      run: |
+        python3 "${{ github.action_path }}/check_dependency_version.py" \
+          --manifest-file "${{ inputs.manifest_file }}" \
+          --dependency-name "${{ inputs.dependency_name }}" \
+          --dependency-manifest /tmp/eso-dependency-check-dep.addon \
+          | tee -a "$GITHUB_STEP_SUMMARY"
